@@ -82,19 +82,19 @@ function ComposeMessage({ onDismiss }: ComposeMessageProps) {
         <IonInput
           placeholder="From Name"
           value={fromName}
-          onIonChange={(e) => setFromName(e.detail.value!)}
+          onIonInput={(e) => setFromName(e.detail.value!)}
           clearInput
         />
         <IonInput
           placeholder="Subject"
           value={subject}
-          onIonChange={(e) => setSubject(e.detail.value!)}
+          onIonInput={(e) => setSubject(e.detail.value!)}
           clearInput
         />
         <IonTextarea
           placeholder="Content"
           value={content}
-          onIonChange={(e) => setContent(e.detail.value!)}
+          onIonInput={(e) => setContent(e.detail.value!)}
         />
         <IonButton expand="block" onClick={handleSend}>
           Send
