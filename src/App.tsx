@@ -95,7 +95,9 @@ const App: React.FC = () => {
         <IonToolbar>
           <IonItem
             lines="none"
-            style={{ marginLeft: "auto", marginRight: "0" }}
+            style={{
+              "--padding-start": "16px",
+            }}
           >
             <IonToggle
               color="success"
