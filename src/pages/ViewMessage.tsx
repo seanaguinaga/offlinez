@@ -14,8 +14,14 @@ import {
   IonTextarea,
   IonToast,
   IonToolbar,
+  useIonRouter,
 } from "@ionic/react";
-import { create, personCircle, save, trash } from "ionicons/icons";
+import {
+  createOutline,
+  personCircle,
+  saveOutline,
+  trashOutline,
+} from "ionicons/icons";
 import { useEffect, useState } from "react";
 import { useHistory, useParams } from "react-router";
 import { Timestamp } from "../components/Timestamp";
@@ -36,6 +42,8 @@ function ViewMessage() {
   const [loading, setLoading] = useState<boolean>(false);
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
+
+  const router = useIonRouter();
 
   useEffect(() => {
     const unsubscribe = subscribeToMessage(
@@ -59,7 +67,7 @@ function ViewMessage() {
     if (message) {
       try {
         await deleteMessage(message.id);
-        history.push("/home");
+        router.canGoBack() ? router.goBack() : router.push("/home", "back");
       } catch (error) {
         setError("Failed to delete message.");
         console.error("Error deleting message:", error);
@@ -103,17 +111,17 @@ function ViewMessage() {
           {!isEditing && (
             <IonButtons slot="end">
               <IonButton onClick={() => setIsEditing(true)}>
-                <IonIcon slot="icon-only" icon={create} />
+                <IonIcon slot="icon-only" icon={createOutline} />
               </IonButton>
               <IonButton color="danger" onClick={handleDelete}>
-                <IonIcon slot="icon-only" icon={trash} />
+                <IonIcon slot="icon-only" icon={trashOutline} />
               </IonButton>
             </IonButtons>
           )}
           {isEditing && (
             <IonButtons slot="end">
               <IonButton onClick={handleSave}>
-                <IonIcon slot="icon-only" icon={save} />
+                <IonIcon slot="icon-only" icon={saveOutline} />
               </IonButton>
               <IonButton onClick={handleCancelEdit}>Cancel</IonButton>
             </IonButtons>
@@ -178,12 +186,6 @@ function ViewMessage() {
                 </>
               )}
             </div>
-
-            {!isEditing && (
-              <IonButton expand="block" color="danger" onClick={handleDelete}>
-                Delete Message
-              </IonButton>
-            )}
           </>
         ) : (
           <div>Message not found</div>
