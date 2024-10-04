@@ -1,7 +1,6 @@
-import { useState } from 'react';
-import { Message, getMessage } from '../data/messages';
 import {
   IonBackButton,
+  IonButton,
   IonButtons,
   IonContent,
   IonHeader,
@@ -10,42 +9,76 @@ import {
   IonLabel,
   IonNote,
   IonPage,
+  IonToast,
   IonToolbar,
-  useIonViewWillEnter,
-} from '@ionic/react';
-import { personCircle } from 'ionicons/icons';
-import { useParams } from 'react-router';
-import './ViewMessage.css';
+} from "@ionic/react";
+import { personCircle } from "ionicons/icons";
+import { useEffect, useState } from "react";
+import { useHistory, useParams } from "react-router";
+import { deleteMessage, Message, subscribeToMessage } from "../data/messages";
+import "./ViewMessage.css";
 
 function ViewMessage() {
-  const [message, setMessage] = useState<Message>();
-  const params = useParams<{ id: string }>();
+  const [message, setMessage] = useState<Message | undefined>();
+  const [error, setError] = useState<string>("");
+  const { id } = useParams<{ id: string }>();
+  const history = useHistory();
 
-  useIonViewWillEnter(() => {
-    const msg = getMessage(parseInt(params.id, 10));
-    setMessage(msg);
-  });
+  useEffect(() => {
+    const unsubscribe = subscribeToMessage(
+      id,
+      (msg) => {
+        setMessage(msg);
+      },
+      (error) => {
+        setError("Failed to load message.");
+        console.error(`Error subscribing to message with id ${id}:`, error);
+      }
+    );
+    return () => unsubscribe();
+  }, [id]);
+
+  const handleDelete = async () => {
+    if (message) {
+      try {
+        await deleteMessage(message.id);
+        history.push("/home");
+      } catch (error) {
+        setError("Failed to delete message.");
+        console.error("Error deleting message:", error);
+      }
+    }
+  };
 
   return (
     <IonPage id="view-message-page">
       <IonHeader translucent>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton text="Inbox" defaultHref="/home"></IonBackButton>
+            <IonBackButton text="Inbox" defaultHref="/home" />
           </IonButtons>
         </IonToolbar>
       </IonHeader>
 
       <IonContent fullscreen>
+        <IonToast
+          isOpen={!!error}
+          message={error}
+          duration={3000}
+          onDidDismiss={() => setError("")}
+        />
         {message ? (
           <>
             <IonItem>
-              <IonIcon aria-hidden="true" icon={personCircle} color="primary"></IonIcon>
+              <IonIcon aria-hidden="true" icon={personCircle} color="primary" />
               <IonLabel className="ion-text-wrap">
                 <h2>
                   {message.fromName}
                   <span className="date">
                     <IonNote>{message.date}</IonNote>
+                    {message.pending && (
+                      <IonNote color="warning">Draft</IonNote>
+                    )}
                   </span>
                 </h2>
                 <h3>
@@ -56,16 +89,12 @@ function ViewMessage() {
 
             <div className="ion-padding">
               <h1>{message.subject}</h1>
-              <p>
-                Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
-                eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-                enim ad minim veniam, quis nostrud exercitation ullamco laboris
-                nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
-                in reprehenderit in voluptate velit esse cillum dolore eu fugiat
-                nulla pariatur. Excepteur sint occaecat cupidatat non proident,
-                sunt in culpa qui officia deserunt mollit anim id est laborum.
-              </p>
+              <p>{message.content || "No content available."}</p>
             </div>
+
+            <IonButton expand="block" color="danger" onClick={handleDelete}>
+              Delete Message
+            </IonButton>
           </>
         ) : (
           <div>Message not found</div>
