@@ -1,6 +1,7 @@
-import { IonItem, IonLabel, IonNote } from "@ionic/react";
+import { IonItem, IonLabel } from "@ionic/react";
 import { Message } from "../data/messages";
 import "./MessageListItem.css";
+import { Timestamp } from "./Timestamp";
 
 interface MessageListItemProps {
   message: Message;
@@ -17,7 +18,7 @@ const MessageListItem: React.FC<MessageListItemProps> = ({ message }) => {
         <h2>
           {message.fromName}
           <span className="date">
-            <IonNote>{message.date}</IonNote>
+            <Timestamp date={message.date} />
           </span>
         </h2>
         <h3>{message.subject}</h3>

@@ -5,22 +5,35 @@ import {
   IonContent,
   IonHeader,
   IonIcon,
+  IonInput,
   IonItem,
   IonLabel,
+  IonLoading,
   IonNote,
   IonPage,
+  IonTextarea,
   IonToast,
   IonToolbar,
 } from "@ionic/react";
-import { personCircle } from "ionicons/icons";
+import { create, personCircle, save, trash } from "ionicons/icons";
 import { useEffect, useState } from "react";
 import { useHistory, useParams } from "react-router";
-import { deleteMessage, Message, subscribeToMessage } from "../data/messages";
+import { Timestamp } from "../components/Timestamp";
+import {
+  deleteMessage,
+  Message,
+  subscribeToMessage,
+  updateMessage,
+} from "../data/messages";
 import "./ViewMessage.css";
 
 function ViewMessage() {
   const [message, setMessage] = useState<Message | undefined>();
   const [error, setError] = useState<string>("");
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editedSubject, setEditedSubject] = useState<string>("");
+  const [editedContent, setEditedContent] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
 
@@ -29,6 +42,10 @@ function ViewMessage() {
       id,
       (msg) => {
         setMessage(msg);
+        if (msg) {
+          setEditedSubject(msg.subject);
+          setEditedContent(msg.content || "");
+        }
       },
       (error) => {
         setError("Failed to load message.");
@@ -50,6 +67,32 @@ function ViewMessage() {
     }
   };
 
+  const handleSave = async () => {
+    if (message) {
+      setLoading(true);
+      try {
+        await updateMessage(message.id, {
+          subject: editedSubject,
+          content: editedContent,
+        });
+        setIsEditing(false);
+        setLoading(false);
+      } catch (error) {
+        setError("Failed to update message.");
+        console.error("Error updating message:", error);
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (message) {
+      setEditedSubject(message.subject);
+      setEditedContent(message.content || "");
+    }
+    setIsEditing(false);
+  };
+
   return (
     <IonPage id="view-message-page">
       <IonHeader translucent>
@@ -57,15 +100,35 @@ function ViewMessage() {
           <IonButtons slot="start">
             <IonBackButton text="Inbox" defaultHref="/home" />
           </IonButtons>
+          {!isEditing && (
+            <IonButtons slot="end">
+              <IonButton onClick={() => setIsEditing(true)}>
+                <IonIcon slot="icon-only" icon={create} />
+              </IonButton>
+              <IonButton color="danger" onClick={handleDelete}>
+                <IonIcon slot="icon-only" icon={trash} />
+              </IonButton>
+            </IonButtons>
+          )}
+          {isEditing && (
+            <IonButtons slot="end">
+              <IonButton onClick={handleSave}>
+                <IonIcon slot="icon-only" icon={save} />
+              </IonButton>
+              <IonButton onClick={handleCancelEdit}>Cancel</IonButton>
+            </IonButtons>
+          )}
         </IonToolbar>
       </IonHeader>
 
       <IonContent fullscreen>
+        <IonLoading isOpen={loading} message={"Updating message..."} />
         <IonToast
           isOpen={!!error}
           message={error}
           duration={3000}
           onDidDismiss={() => setError("")}
+          color="danger"
         />
         {message ? (
           <>
@@ -75,8 +138,8 @@ function ViewMessage() {
                 <h2>
                   {message.fromName}
                   <span className="date">
-                    <IonNote>{message.date}</IonNote>
-                    {message.pending && (
+                    <Timestamp date={message.date} />
+                    {message.pending && !isEditing && (
                       <IonNote color="warning">Draft</IonNote>
                     )}
                   </span>
@@ -88,13 +151,39 @@ function ViewMessage() {
             </IonItem>
 
             <div className="ion-padding">
-              <h1>{message.subject}</h1>
-              <p>{message.content || "No content available."}</p>
+              {!isEditing ? (
+                <>
+                  <h1>{message.subject}</h1>
+                  <p>{message.content || "No content available."}</p>
+                </>
+              ) : (
+                <>
+                  <IonItem>
+                    <IonLabel position="stacked">Subject</IonLabel>
+                    <IonInput
+                      value={editedSubject}
+                      onIonChange={(e) => setEditedSubject(e.detail.value!)}
+                    />
+                  </IonItem>
+                  <IonItem>
+                    <IonLabel position="stacked">Content</IonLabel>
+                    <IonTextarea
+                      value={editedContent}
+                      onIonInput={(e) => {
+                        setEditedContent(e.detail.value!);
+                        console.log(e.detail.value);
+                      }}
+                    />
+                  </IonItem>
+                </>
+              )}
             </div>
 
-            <IonButton expand="block" color="danger" onClick={handleDelete}>
-              Delete Message
-            </IonButton>
+            {!isEditing && (
+              <IonButton expand="block" color="danger" onClick={handleDelete}>
+                Delete Message
+              </IonButton>
+            )}
           </>
         ) : (
           <div>Message not found</div>

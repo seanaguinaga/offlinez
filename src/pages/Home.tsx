@@ -15,9 +15,9 @@ import {
 } from "@ionic/react";
 import { add } from "ionicons/icons";
 import { useEffect, useState } from "react";
+import ComposeMessage from "../components/ComposeMessage";
 import MessageListItem from "../components/MessageListItem";
 import { Message, subscribeToMessages } from "../data/messages";
-import ComposeMessage from "./ComposeMessage";
 import "./Home.css";
 
 const Home: React.FC = () => {

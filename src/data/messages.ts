@@ -55,6 +55,7 @@ export const subscribeToMessage = (
   const messageDoc = doc(db, "messages", id);
   return onSnapshot(
     messageDoc,
+    { includeMetadataChanges: true },
     (docSnap: DocumentSnapshot) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -130,16 +131,24 @@ export const createMessage = (message: Omit<Message, "id">): Message => {
 };
 
 // Update an existing message
-export const updateMessage = async (
+export const updateMessage = (
   id: string,
   updatedData: Partial<Message>
-): Promise<void> => {
+): void => {
   try {
     const messageDoc = doc(db, "messages", id);
-    await updateDoc(messageDoc, updatedData);
+    updateDoc(messageDoc, updatedData)
+      .then(() => {
+        console.log(`Message with id ${id} successfully updated!`);
+        // Optionally, you can update the message status here if needed
+      })
+      .catch((error) => {
+        console.error(`Error updating message with id ${id}:`, error);
+        // Handle the error appropriately, possibly updating the UI
+      });
   } catch (error) {
-    console.error(`Error updating message with id ${id}:`, error);
-    throw error;
+    console.error(`Unexpected error updating message with id ${id}:`, error);
+    // Handle the error appropriately
   }
 };
 
@@ -147,9 +156,17 @@ export const updateMessage = async (
 export const deleteMessage = async (id: string): Promise<void> => {
   try {
     const messageDoc = doc(db, "messages", id);
-    await deleteDoc(messageDoc);
+    deleteDoc(messageDoc)
+      .then(() => {
+        console.log(`Message with id ${id} successfully deleted!`);
+        // Optionally, you can update the UI or internal state here if needed
+      })
+      .catch((error) => {
+        console.error(`Error deleting message with id ${id}:`, error);
+        // Handle the error appropriately, possibly updating the UI
+      });
   } catch (error) {
-    console.error(`Error deleting message with id ${id}:`, error);
-    throw error;
+    console.error(`Unexpected error deleting message with id ${id}:`, error);
+    // Handle the error appropriately
   }
 };
