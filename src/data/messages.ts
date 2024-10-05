@@ -115,8 +115,8 @@ export const getMessage = async (id: string): Promise<Message | undefined> => {
 export const createMessage = (message: Omit<Message, "id">): Message => {
   const newMessageRef = doc(collection(db, "messages"));
 
-  // Attempt to set the document without awaiting
-  setDoc(newMessageRef, { ...message, pending: true })
+  // Attempt to set the document without the 'pending' field
+  setDoc(newMessageRef, { ...message })
     .then(() => {
       console.log("Message successfully written!");
       // Optionally, you can update the message status here if needed
@@ -137,7 +137,9 @@ export const updateMessage = (
 ): void => {
   try {
     const messageDoc = doc(db, "messages", id);
-    updateDoc(messageDoc, updatedData)
+    // Ensure 'pending' is not part of the data being updated
+    const { pending, ...dataToUpdate } = updatedData;
+    updateDoc(messageDoc, dataToUpdate)
       .then(() => {
         console.log(`Message with id ${id} successfully updated!`);
         // Optionally, you can update the message status here if needed
@@ -156,17 +158,11 @@ export const updateMessage = (
 export const deleteMessage = async (id: string): Promise<void> => {
   try {
     const messageDoc = doc(db, "messages", id);
-    deleteDoc(messageDoc)
-      .then(() => {
-        console.log(`Message with id ${id} successfully deleted!`);
-        // Optionally, you can update the UI or internal state here if needed
-      })
-      .catch((error) => {
-        console.error(`Error deleting message with id ${id}:`, error);
-        // Handle the error appropriately, possibly updating the UI
-      });
+    await deleteDoc(messageDoc);
+    console.log(`Message with id ${id} successfully deleted!`);
+    // Optionally, you can update the UI or internal state here if needed
   } catch (error) {
-    console.error(`Unexpected error deleting message with id ${id}:`, error);
-    // Handle the error appropriately
+    console.error(`Error deleting message with id ${id}:`, error);
+    // Handle the error appropriately, possibly updating the UI
   }
 };
